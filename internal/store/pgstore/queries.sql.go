@@ -13,13 +13,10 @@ import (
 
 const getMessage = `-- name: GetMessage :one
 SELECT
-  "id",
-  "room_id",
-  "message",
-  "reaction_count",
-  "answered"
+    "id", "room_id", "message", "reaction_count", "answered"
 FROM messages
-WHERE id = $1
+WHERE
+    id = $1
 `
 
 func (q *Queries) GetMessage(ctx context.Context, id uuid.UUID) (Message, error) {
@@ -36,10 +33,9 @@ func (q *Queries) GetMessage(ctx context.Context, id uuid.UUID) (Message, error)
 }
 
 const getRoom = `-- name: GetRoom :one
-SELECT 
-  "id",
-  "theme"
-FROM rooms 
+SELECT
+    "id", "theme"
+FROM rooms
 WHERE id = $1
 `
 
@@ -50,10 +46,43 @@ func (q *Queries) GetRoom(ctx context.Context, id uuid.UUID) (Room, error) {
 	return i, err
 }
 
+const getRoomMessages = `-- name: GetRoomMessages :many
+SELECT
+    "id", "room_id", "message", "reaction_count", "answered"
+FROM messages
+WHERE
+    room_id = $1
+`
+
+func (q *Queries) GetRoomMessages(ctx context.Context, roomID uuid.UUID) ([]Message, error) {
+	rows, err := q.db.Query(ctx, getRoomMessages, roomID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Message
+	for rows.Next() {
+		var i Message
+		if err := rows.Scan(
+			&i.ID,
+			&i.RoomID,
+			&i.Message,
+			&i.ReactionCount,
+			&i.Answered,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRooms = `-- name: GetRooms :many
-SELECT 
-  "id",
-  "theme"
+SELECT
+    "id", "theme"
 FROM rooms
 `
 
@@ -79,14 +108,14 @@ func (q *Queries) GetRooms(ctx context.Context) ([]Room, error) {
 
 const insertMessage = `-- name: InsertMessage :one
 INSERT INTO messages
-  ("room_id", "message") VALUES
-  ($1, $2)
+    ( "room_id", "message" ) VALUES
+    ( $1, $2 )
 RETURNING "id"
 `
 
 type InsertMessageParams struct {
-	RoomID  uuid.UUID
-	Message string
+	RoomID  uuid.UUID `db:"room_id" json:"room_id"`
+	Message string    `db:"message" json:"message"`
 }
 
 func (q *Queries) InsertMessage(ctx context.Context, arg InsertMessageParams) (uuid.UUID, error) {
@@ -97,9 +126,9 @@ func (q *Queries) InsertMessage(ctx context.Context, arg InsertMessageParams) (u
 }
 
 const insertRoom = `-- name: InsertRoom :one
-INSERT INTO rooms 
-  ("theme") VALUES 
-  ($1) 
+INSERT INTO rooms
+    ( "theme" ) VALUES
+    ( $1 )
 RETURNING "id"
 `
 
@@ -110,26 +139,25 @@ func (q *Queries) InsertRoom(ctx context.Context, theme string) (uuid.UUID, erro
 	return id, err
 }
 
-const markMessageAsAnswered = `-- name: MarkMessageAsAnswered :one
+const markMessageAsAnswered = `-- name: MarkMessageAsAnswered :exec
 UPDATE messages
 SET
-  "answered" = TRUE
-WHERE id = $1
-RETURNING answered
+    answered = true
+WHERE
+    id = $1
 `
 
-func (q *Queries) MarkMessageAsAnswered(ctx context.Context, id uuid.UUID) (bool, error) {
-	row := q.db.QueryRow(ctx, markMessageAsAnswered, id)
-	var answered bool
-	err := row.Scan(&answered)
-	return answered, err
+func (q *Queries) MarkMessageAsAnswered(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, markMessageAsAnswered, id)
+	return err
 }
 
 const reactToMessage = `-- name: ReactToMessage :one
 UPDATE messages
 SET
-  "reaction_count" = "reaction_count" + 1
-WHERE id = $1
+    reaction_count = reaction_count + 1
+WHERE
+    id = $1
 RETURNING reaction_count
 `
 
@@ -143,8 +171,9 @@ func (q *Queries) ReactToMessage(ctx context.Context, id uuid.UUID) (int64, erro
 const removeReactionFromMessage = `-- name: RemoveReactionFromMessage :one
 UPDATE messages
 SET
-  "reaction_count" = "reaction_count" - 1
-WHERE id = $1
+    reaction_count = reaction_count - 1
+WHERE
+    id = $1
 RETURNING reaction_count
 `
 

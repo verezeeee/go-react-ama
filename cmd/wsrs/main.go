@@ -8,13 +8,14 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/rocketseat-education/semana-tech-go-react-server/internal/api"
+	"github.com/rocketseat-education/semana-tech-go-react-server/internal/store/pgstore"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
-	"github.com/verezeeee/go-react-ama.git/internal/api"
-	"github.com/verezeeee/go-react-ama.git/internal/store/pgstore"
 )
 
-func main () {
+func main() {
 	if err := godotenv.Load(); err != nil {
 		panic(err)
 	}
@@ -23,11 +24,11 @@ func main () {
 
 	pool, err := pgxpool.New(ctx, fmt.Sprintf(
 		"user=%s password=%s host=%s port=%s dbname=%s",
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASS"),
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_NAME"),
+		os.Getenv("WSRS_DATABASE_USER"),
+		os.Getenv("WSRS_DATABASE_PASSWORD"),
+		os.Getenv("WSRS_DATABASE_HOST"),
+		os.Getenv("WSRS_DATABASE_PORT"),
+		os.Getenv("WSRS_DATABASE_NAME"),
 	))
 	if err != nil {
 		panic(err)
@@ -51,6 +52,5 @@ func main () {
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
-
 	<-quit
 }
