@@ -12,13 +12,9 @@ import (
 	"github.com/rocketseat-education/semana-tech-go-react-server/internal/store/pgstore"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		panic(err)
-	}
 
 	ctx := context.Background()
 	port := os.Getenv("WSRS_PORT")
