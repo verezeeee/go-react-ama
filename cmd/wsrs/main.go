@@ -22,7 +22,9 @@ func main() {
 
 	ctx := context.Background()
 	port := os.Getenv("WSRS_PORT")
-
+	if port == "" {
+    		port = "4000"
+	}
 	pool, err := pgxpool.New(ctx, fmt.Sprintf(
 		"user=%s password=%s host=%s port=%s dbname=%s",
 		os.Getenv("WSRS_DATABASE_USER"),
