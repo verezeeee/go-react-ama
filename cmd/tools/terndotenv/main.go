@@ -3,13 +3,13 @@ package main
 import (
 	"os/exec"
 
-	"github.com/joho/godotenv"
+	// "github.com/joho/godotenv"
 )
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		panic(err)
-	}
+	// if err := godotenv.Load(); err != nil {
+	// 	panic(err)
+	// }
 
 	cmd := exec.Command(
 		"tern",
